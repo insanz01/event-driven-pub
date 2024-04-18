@@ -2,16 +2,19 @@ import cors from 'cors'
 import dotenv from 'dotenv'
 import express from 'express'
 
+import { initAMQP } from './config/amqp'
 import { errorHandler } from './middleware'
 import routes from './routes'
 
 dotenv.config()
 
-const PORT = process.env.PORT ?? 3000
+const PORT = process.env.PORT ?? 3008
 const app = express()
 
 app.use(cors())
 app.use(express.json())
+
+void initAMQP()
 
 app.use(routes)
 app.use(errorHandler)
