@@ -1,30 +1,49 @@
 import * as amqp from 'amqplib'
 
-export let channel: amqp.Channel
-export let connection: amqp.Connection
+export class AMQP {
+	public static channel: amqp.Channel
+	public static connection: amqp.Connection
 
-export const connectAMQP = async () => {
-	try {
-		connection = await amqp.connect('amqp://admin:password@localhost:5672')
-		channel = await connection.createChannel()
+	async init() {
+		const RABBITMQ_DSN = process.env.RABBITMQ_DSN ?? ''
 
-		await channel.assertQueue('books:store')
-		await channel.assertQueue('books:update')
+		AMQP.connection = await amqp.connect(RABBITMQ_DSN)
+		AMQP.channel = await AMQP.connection.createChannel()
+	}
 
-		console.log('berhasil terhubung ke amqp')
+	async registerQueue(queue: string) {
+		await AMQP.channel.assertQueue(queue)
+	}
 
-		connection.on('close', function () {
-			console.error('[AMQP] reconnecting')
-			return setTimeout(connectAMQP, 1000)
-		})
-	} catch (error) {
-		console.log(error)
+	static async sendToQueue(queue: string, data: any) {
+		try {
+			AMQP.channel.sendToQueue(queue, Buffer.from(JSON.stringify(data)))
+		} catch (error) {
+			console.log(error)
+		}
+	}
+
+	async registerSubscriber(queue: string, fn: any) {
+		let parsedData
+
+		try {
+			await AMQP.channel
+				.consume(queue, async (data: any) => {
+					console.log('Data received :', Buffer.from(data.content).toString())
+
+					parsedData = JSON.parse(Buffer.from(data.content).toString())
+
+					await fn(parsedData)
+
+					AMQP.channel.ack(data)
+				})
+				.catch((error) => {
+					console.log('error', error)
+				})
+		} catch (error) {
+			console.log('error', error)
+		}
+
+		return parsedData
 	}
 }
-
-// google pub/sub
-// aws event
-// rabbitmq -> amqp -> mqtt
-// kafka
-// nats -> mqtt -> amqp
-// redis
