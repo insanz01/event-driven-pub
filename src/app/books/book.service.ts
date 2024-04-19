@@ -1,15 +1,8 @@
-import { channel } from 'src/config/amqp'
 import { ERROR_CODE } from 'src/interface'
 import { AppError } from 'src/middleware'
 
+import { sendData } from './book.publisher'
 import * as bookRepository from './book.repository'
-
-const sendData = async (topic: string, data: any) => {
-	channel.sendToQueue(topic, Buffer.from(JSON.stringify(data)))
-
-	// await channel.close()
-	// await connection.close()
-}
 
 export const createBook = async (data: any) => {
 	const book = await bookRepository.save(data.title, data.author, data.volume)
