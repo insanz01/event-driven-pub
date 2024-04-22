@@ -1,0 +1,9 @@
+node_modules
+# Keep environment variables out of version control
+.env
+.idea
+dist/
+api-dev.yaml
+dispatch.yaml
+service-account.json
+src/prisma/

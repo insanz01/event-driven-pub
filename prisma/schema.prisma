@@ -1,0 +1,226 @@
+generator client {
+  provider      = "prisma-client-js"
+  output        = "../src/prisma/client"
+  binaryTargets = ["native", "debian-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model Book {
+  id     Int    @id @default(autoincrement())
+  bookId Int    @unique @map("book_id")
+  title  String
+  author String
+  volume Int
+
+  @@map("books")
+}
+
+model Product {
+  id        Int    @id @default(autoincrement())
+  productId Int    @unique @map("product_id")
+  name      String @db.VarChar(100)
+  quantity  Int
+  price     Int
+
+  @@map("products")  
+}
+
+model Order {
+  id          Int    @id @default(autoincrement())
+  productName String @db.VarChar(100)
+  quantity  Int
+  price     Int
+
+  @@map("orders")
+}
+
+model User {
+  id                String              @id @db.Char(36)
+  email             String              @unique
+  name              String              @db.VarChar(100)
+  phoneNumber       String              @default("") @map("phone_number")
+  isActive          Boolean?            @default(false) @map("is_active")
+  createdAt         DateTime            @default(now()) @map("created_at") @db.DateTime(0)
+  updatedAt         DateTime            @default(now()) @map("updated_at") @db.DateTime(0)
+  deletedAt         DateTime?           @map("deleted_at") @db.DateTime(0)
+  UserIdentity      UserIdentity[]
+  applicationAccess ApplicationAccess[]
+
+  @@map("users")
+}
+
+model Category {
+  id            Int           @id @default(autoincrement())
+  name          String        @unique(map: "name_unique") @db.VarChar(255)
+  isActive      Boolean       @default(false) @map("is_active")
+  createdAt     DateTime      @default(now()) @map("created_at") @db.DateTime(0)
+  updatedAt     DateTime      @default(now()) @map("updated_at") @db.DateTime(0)
+  deletedAt     DateTime?     @map("deleted_at") @db.DateTime(0)
+  subCategories SubCategory[]
+
+  @@map("categories")
+}
+
+model SubCategory {
+  id         Int       @id @default(autoincrement())
+  categoryId Int       @map("category_id")
+  name       String    @db.VarChar(255)
+  isActive   Boolean   @default(false) @map("is_active")
+  createdAt  DateTime  @default(now()) @map("created_at") @db.DateTime(0)
+  updatedAt  DateTime  @default(now()) @map("updated_at") @db.DateTime(0)
+  deletedAt  DateTime? @map("deleted_at") @db.DateTime(0)
+  category   Category  @relation(fields: [categoryId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "sub_categories_ibfk_1")
+
+  @@unique([name, categoryId], map: "category_id_name_unique")
+  @@index([categoryId], map: "category_id")
+  @@map("sub_categories")
+}
+
+model Applications {
+  id                String              @id
+  name              String
+  isActive          Boolean             @map("is_active")
+  applicationAccess ApplicationAccess[]
+
+  @@map("applications")
+}
+
+model ApplicationAccess {
+  id            String       @id
+  userId        String       @map("user_id")
+  applicationId String       @map("application_id")
+  roleId        Int          @map("role_id")
+  isActive      Boolean      @map("is_active")
+  application   Applications @relation(fields: [applicationId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "application_access_ibfk_1")
+  role          Roles        @relation(fields: [roleId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "application_access_ibfk_2")
+  user          User         @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "application_access_ibfk_3")
+
+  @@map("application_access")
+}
+
+model Roles {
+  id                Int                 @id @default(autoincrement())
+  name              String              @unique(map: "name_unique") @db.VarChar(255)
+  isActive          Boolean             @default(false) @map("is_active")
+  createdAt         DateTime            @default(now()) @map("created_at") @db.DateTime(0)
+  updatedAt         DateTime            @default(now()) @map("updated_at") @db.DateTime(0)
+  deletedAt         DateTime?           @map("deleted_at") @db.DateTime(0)
+  applicationAccess ApplicationAccess[]
+
+  @@map("roles")
+}
+
+model Otp {
+  token       String    @unique @db.Char(36)
+  email       String    @db.VarChar(16)
+  phoneNumber String    @map("phone_number") @db.VarChar(50)
+  otp         String    @id @db.VarChar(60)
+  expiry      DateTime?
+
+  @@index([email], map: "email")
+  @@map("otps")
+}
+
+model Departments {
+  id                   Int                     @id @default(autoincrement())
+  name                 String                  @unique(map: "name_unique") @db.VarChar(255)
+  isActive             Boolean                 @default(false) @map("is_active")
+  createdAt            DateTime                @default(now()) @map("created_at") @db.DateTime(0)
+  updatedAt            DateTime                @default(now()) @map("updated_at") @db.DateTime(0)
+  deletedAt            DateTime?               @map("deleted_at") @db.DateTime(0)
+  DepartmentManagement DepartmentManagements[]
+
+  @@map("departments")
+}
+
+model DepartmentManagements {
+  id             Int                @id @default(autoincrement())
+  divisionId     Int                @map("division_id")
+  departmentId   Int                @map("department_id")
+  titleId        Int                @map("title_id")
+  isProfitCenter Boolean            @default(false) @map("is_profit_center")
+  isActive       Boolean            @default(false) @map("is_active")
+  createdAt      DateTime           @default(now()) @map("created_at") @db.DateTime(0)
+  updatedAt      DateTime           @default(now()) @map("updated_at") @db.DateTime(0)
+  deletedAt      DateTime?          @map("deleted_at") @db.DateTime(0)
+  department     Departments        @relation(fields: [departmentId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "department_management_ibfk_1")
+  title          TitleOfDepartments @relation(fields: [titleId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "department_management_ibfk_2")
+  UserIdentity   UserIdentity[]
+
+  @@map("department_management")
+}
+
+model TitleOfDepartments {
+  id                   Int                     @id @default(autoincrement())
+  name                 String                  @unique(map: "name_unique") @db.VarChar(255)
+  isLeader             Boolean                 @default(false) @map("is_leader")
+  isActive             Boolean                 @default(false) @map("is_active")
+  createdAt            DateTime                @default(now()) @map("created_at") @db.DateTime(0)
+  updatedAt            DateTime                @default(now()) @map("updated_at") @db.DateTime(0)
+  deletedAt            DateTime?               @map("deleted_at") @db.DateTime(0)
+  DepartmentManagement DepartmentManagements[]
+
+  @@map("title_of_departments")
+}
+
+model UserIdentity {
+  id                     Int                   @id @default(autoincrement())
+  userId                 String                @map("user_id") @db.Char(36)
+  divisionId             Int                   @map("division_id")
+  titleOfDivisionId      Int                   @map("title_of_division_id")
+  DepartmentManagementId Int                   @map("department_management_id")
+  createdAt              DateTime              @default(now()) @map("created_at") @db.DateTime(0)
+  updatedAt              DateTime              @default(now()) @map("updated_at") @db.DateTime(0)
+  deletedAt              DateTime?             @map("deleted_at") @db.DateTime(0)
+  User                   User                  @relation(fields: [userId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "user_identity_ibfk_1")
+  DepartmentManagement   DepartmentManagements @relation(fields: [DepartmentManagementId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "user_identity_ibfk_2")
+  division               Divisions             @relation(fields: [divisionId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "user_identity_ibfk_3")
+  titleOfDivision        TitleOfDivisions      @relation(fields: [titleOfDivisionId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "user_identity_ibfk_4")
+
+  @@map("user_identity")
+}
+
+model Divisions {
+  id                 Int                   @id @default(autoincrement())
+  name               String                @db.VarChar(255)
+  isActive           Boolean               @default(false) @map("is_active")
+  createdAt          DateTime              @default(now()) @map("created_at") @db.DateTime(0)
+  updatedAt          DateTime              @default(now()) @map("updated_at") @db.DateTime(0)
+  deletedAt          DateTime?             @map("deleted_at") @db.DateTime(0)
+  UserIdentity       UserIdentity[]
+  DivisionManagement DivisionsManagement[]
+
+  @@map("divisions")
+}
+
+model DivisionsManagement {
+  id         Int              @id @default(autoincrement())
+  divisionId Int              @map("division_id")
+  titleId    Int              @map("title_id")
+  isActive   Boolean          @map("is_active")
+  createdAt  DateTime         @default(now()) @map("created_at") @db.DateTime(0)
+  updatedAt  DateTime         @default(now()) @map("updated_at") @db.DateTime(0)
+  deletedAt  DateTime?        @map("deleted_at") @db.DateTime(0)
+  division   Divisions        @relation(fields: [divisionId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "divisions_management_ibfk_1")
+  title      TitleOfDivisions @relation(fields: [titleId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "divisions_management_ibfk_2")
+
+  @@map("divisions_management")
+}
+
+model TitleOfDivisions {
+  id                 Int                   @id @default(autoincrement())
+  name               String                @unique(map: "name_unique") @db.VarChar(255)
+  isLeader           Boolean               @default(false) @map("is_leader")
+  isActive           Boolean               @default(false) @map("is_active")
+  createdAt          DateTime              @default(now()) @map("created_at") @db.DateTime(0)
+  updatedAt          DateTime              @default(now()) @map("updated_at") @db.DateTime(0)
+  deletedAt          DateTime?             @map("deleted_at") @db.DateTime(0)
+  DivisionManagement DivisionsManagement[]
+  UserIdentity       UserIdentity[]
+
+  @@map("title_of_divisions")
+}
